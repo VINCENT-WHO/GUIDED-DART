@@ -1,0 +1,61 @@
+%YAML:1.0
+---
+# 内参、外参及保存目录的相对路径均以本配置文件所在目录为基准。
+# 左相机 DA4767121 对应 calibration2.yaml；右相机 DA8855504 对应 calibration(5-50).yaml。
+left_intrinsics: "calibration2.yaml"
+right_intrinsics: "calibration(5-50).yaml"
+# 优先按序列号选择，避免 USB 枚举顺序变化造成左右交换。
+left_serial: "DA4767121"
+right_serial: "DA8855504"
+# 只有序列号留空时，下方枚举下标才起作用。
+left_index: 1
+right_index: 0
+
+# 填写已标定的外参文件后优先使用其中的 R/T，例如 "stereo_extrinsics.yaml"。
+# 空字符串表示没有加载外参标定；此时尝试使用下方平行模型。
+extrinsics: ""
+# 实测基线，单位 mm；0 表示禁用近似测距。
+# 仅当右光心在左相机 +X 方向、两相机坐标轴完全同向时，R=I、T=(-B,0,0) 才成立。
+parallel_baseline_mm: 99.8
+# 两台相机共用曝光：60000 微秒 = 60 毫秒 = 0.06 秒，启动时关闭自动曝光。
+# 改为 0 保留相机现有曝光；长曝光下目标或相机运动会产生拖影。
+exposure_us: 60000.
+# 仅缩放显示，不改变原图检测坐标、内参和测距；原图下方默认拼接同宽的黑白掩码。
+preview_width: 540
+# 按 s 保存成对原图、预览、掩码和相机映射；文件夹按需自动建立。
+save_directory: "captures"
+
+# 公共检测缺省值。实际优先级：公共值 < 下方左右独立值 < hsv_overrides.yaml。
+# OpenCV 的 H 范围为 0～179；S、V 为 0～255。这里只设 H 上下限及 S/V 下限。
+h_min: 35
+h_max: 90
+s_min: 90
+v_min: 70
+# 最小轮廓面积，单位原图像素²；最大轮廓面积占整幅图像的比例。
+min_area_px: 12.
+max_area_fraction: 0.45
+# 圆度 C=4πA/P²，要求 C 不低于本值；太低会接受更多细长或破碎轮廓。
+min_circularity: 0.45
+# 椭圆形态学核边长，允许 1～31 的奇数；1 跳过开闭运算。
+morphology_size: 3
+# 重投影残差（px）仅显示和记录，不再设置或应用像素误差门限。
+# 观察射线最小夹角，单位度；夹角太小意味着深度对像素误差十分敏感。
+min_ray_angle_deg: 0.02
+
+# 以下左右参数依据 2026-10-20、60 ms 曝光下的真实绿色目标设置。
+# 左目标 HSV 中位数约 (63,151,53)，右约 (55,151,56)；原 V≥70 会全部漏掉。
+# 左侧实际范围 H∈[49,78]、S∈[90,255]、V∈[35,255]。
+left_h_min: 49
+left_h_max: 78
+left_s_min: 90
+left_v_min: 35
+# 当前较大的屏幕圆斑用 100 像素² 去小噪声；远距离小目标需要重新核对面积门限。
+left_min_area_px: 100.
+left_min_circularity: 0.60
+# 右侧实际范围 H∈[42,70]、S∈[90,255]、V∈[35,255]。
+right_h_min: 42
+right_h_max: 70
+right_s_min: 90
+right_v_min: 35
+right_min_area_px: 100.
+right_min_circularity: 0.60

@@ -1,0 +1,124 @@
+%YAML:1.0
+---
+image_width: 3072
+image_height: 2048
+pattern_cols: 9
+pattern_rows: 6
+square_size: 18.
+square_size_unit: mm
+subpix_window: 31
+images_total: 35
+images_used: 35
+calibration_flags: 128
+fixed_k3: 1
+distortion_order: "k1,k2,p1,p2,k3"
+camera_matrix: [ 1.4725229514806344e+04, 0., 1.3780229927154105e+03, 0.,
+    1.4714318168060965e+04, 1.1469228704020863e+03, 0., 0., 1. ]
+distort_coeffs: [ 6.8866602920338882e-01, 1.0473724645868222e+01,
+    5.6950871867519762e-04, -1.5850597648076434e-02, 0. ]
+camera_matrix_opencv: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 1.4725229514806344e+04, 0., 1.3780229927154105e+03, 0.,
+       1.4714318168060965e+04, 1.1469228704020863e+03, 0., 0., 1. ]
+dist_coeffs_opencv: !!opencv-matrix
+   rows: 1
+   cols: 5
+   dt: d
+   data: [ 6.8866602920338882e-01, 1.0473724645868222e+01,
+       5.6950871867519762e-04, -1.5850597648076434e-02, 0. ]
+rms_reprojection_error_px: 3.2790565103456037e-01
+mean_reprojection_error_px: 2.4745961091834709e-01
+used_images:
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152728895.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152734689.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152736457.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152738255.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152740141.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152741909.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152744485.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152746452.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152748560.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152750630.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152752655.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152755563.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152800518.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152802802.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152805060.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152807303.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152810720.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152812689.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152814535.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152816997.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152819015.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152827145.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152829832.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152832505.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152836260.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152849160.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152854129.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152856825.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152859872.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152906228.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152926170.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152935349.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152939401.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021152947894.bmp"
+   - "/home/ttt/combat飞飙/内参标定/image_right/Image_20261021153004331.bmp"
+failed_images:
+   []
+detection_methods:
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - "classic_scale_0.500000"
+   - "classic_scale_0.500000"
+   - classic
+   - classic
+   - classic
+   - classic
+   - "classic_scale_0.500000"
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+   - classic
+per_view_rms_px: [ 1.1434584945542071e-01, 3.9430698772895506e-01,
+    3.2759030952452828e-01, 2.8146557459107441e-01,
+    1.6329770965161977e-01, 1.4706558564993821e-01,
+    1.0396249832665297e-01, 1.2320919966246194e-01,
+    2.1732406136944446e-01, 3.4858836165587931e-01,
+    4.1536263589076944e-01, 5.3293721385995829e-01,
+    3.6228672228486786e-01, 2.5763753983400978e-01,
+    1.9308582000982663e-01, 1.9833432846119936e-01,
+    1.6389365444316917e-01, 1.7984479125823410e-01,
+    1.6294017222088120e-01, 2.3323055068554724e-01,
+    2.8432180721212236e-01, 2.9963661897451682e-01,
+    3.9580492144166940e-01, 4.9746003037973391e-01,
+    5.7043295076227729e-01, 2.2202174067506736e-01,
+    2.5510365857903444e-01, 4.9027658526786927e-01,
+    7.5713224284944936e-01, 4.4878828936605575e-01,
+    2.1149513950374826e-01, 2.2037526438090954e-01,
+    2.2681718141265525e-01, 1.6158962743775021e-01,
+    3.0630248152337408e-01 ]
