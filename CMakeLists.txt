@@ -5,6 +5,17 @@ project(stereo_green_range LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(BUILD_CAMERA_APPS "Build MVS/OpenCV camera and calibration applications" ON)
+add_library(vision_link vision_link.cpp)
+target_include_directories(vision_link PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(vision_link PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(vision_yaw_probe vision_yaw_probe.cpp)
+target_link_libraries(vision_yaw_probe PRIVATE vision_link)
+target_compile_options(vision_yaw_probe PRIVATE -Wall -Wextra -Wpedantic)
+if(NOT BUILD_CAMERA_APPS)
+  return()
+endif()
+
 # 只寻找本项目需要的 OpenCV 模块和线程库；缺依赖时在配置阶段直接报错。
 find_package(OpenCV 4 REQUIRED COMPONENTS core imgproc calib3d highgui imgcodecs)
 find_package(Threads REQUIRED)
@@ -22,7 +33,7 @@ target_link_libraries(stereo_core PUBLIC ${OpenCV_LIBS})
 # 实时程序由 UI/主循环和 MVS 相机封装组成，再链接核心算法、SDK 和线程库。
 add_executable(stereo_range main.cpp mvs_camera.cpp)
 target_include_directories(stereo_range PRIVATE ${MVS_INCLUDE})
-target_link_libraries(stereo_range PRIVATE stereo_core ${MVS_LIBRARY} Threads::Threads)
+target_link_libraries(stereo_range PRIVATE stereo_core vision_link ${MVS_LIBRARY} Threads::Threads)
 # 把 SDK 动态库目录写入构建产物的运行时搜索路径，方便直接执行程序。
 get_filename_component(MVS_LIBRARY_DIR ${MVS_LIBRARY} DIRECTORY)
 set_target_properties(stereo_range PROPERTIES BUILD_RPATH ${MVS_LIBRARY_DIR})

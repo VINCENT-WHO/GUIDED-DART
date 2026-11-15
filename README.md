@@ -166,3 +166,51 @@ cmake --build build -j4
 已从核心函数、调用参数和配置中移除测距的 `max_reprojection_error_px`。重投影误差无论是否超过原来的 2 px，都不会仅因此隐藏距离；窗口中的 `Distance to baseline` 显示到两光心直线的原始估计距离（m），`reproj` 仍显示像素残差。终端和 CSV 保留距离、残差及 `Estimate (reprojection not filtered)` 状态，方便后续与真实距离对照。CSV 的 `valid=1` 仅表示目标齐全、正深度、射线夹角足够且数值有限，不代表精度已经验收。
 
 目标缺失、视差不足、无效基线、点位于相机后方及非有限结果仍返回 `N/A`。此改动不调整双目外参标定工具的 `--max-rms` 参数，它只影响未来标定结果的保存判定。
+
+
+## C 板 USB 简化协议：编码器 yaw 上行、目标 yaw 下行
+
+本版本替换旧四元数上行及40字节协议，两端须同步更新。无会话、心跳、状态位、序号或取图许可。
+
+| 方向 | 包头 | 载荷 | CRC | 总长 |
+| --- | --- | --- | --- | --- |
+| C 板→上位机 | A5 5A | 编码器估算镖架yaw，float32，度 | 前6字节CRC16 | 8字节 |
+| 上位机→C 板 | 5A A5 | 绝对镖架yaw，float32，度 | 前6字节CRC16 | 8字节 |
+
+所有多字节字段小端。CRC-16/CCITT-FALSE，poly=1021，init=FFFF，refin/refout=false，xorout=0000；CRC低字节先发。上行取自电控 `dart_yaw.estimated_angle_deg`，是编码器经减速比、丝杆导程及机构几何换算出的当前镖架角，正常约20ms一帧。未建立机械零位、反馈不就绪/故障或快照超过100ms时不发包，手动模式也可上报。当前值与下行目标使用同一机械零点、同一方向；不是转子角度或世界航向，不依赖IMU。
+
+下行是相对电控机械零点的绝对角度，不是偏差或电机转子角度。默认有效行程±6°，C板再核对实际软件限位；重复发同一目标不累加。建议20～50Hz刷新，有效目标超过500ms不更新则取消旧目标、保持当前角度。目标丢失时停止发角度，不添加额外标志或心跳。
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j4
+./build/stereo_range --vision-port=/dev/ttyACM0
+```
+
+也可设置配置的 `vision_serial_port`，默认留空保持纯视觉。端口以实际设备为准，优先 `/dev/serial/by-id/...`，需要读写权限。USB线连接小电脑与C板micro USB，机构保持正常供电。离线图片回放禁止启用控制端口。
+
+本程序以左相机唯一目标的去畸变方向，加上拍摄前最新编码器机械yaw，生成绝对目标：
+
+```text
+target = current_encoder_yaw_deg + vision_yaw_sign*(bearing-vision_aim_yaw_deg)
+```
+
+上行已经对齐电控机械零位及方向，不再使用 `vision_imu_yaw_zero_deg` / `vision_imu_yaw_sign`。`vision_yaw_sign` 为画面偏右对应正/负修正（±1）；`vision_aim_yaw_deg` 补偿发射方向相对相机的水平安装角。相机随镖架同转，C板不要求同转；首次使能前人工对正，电机失联后停机重新校零。编码器估算无法直接测量机械间隙、打滑、结构变形或底盘世界航向。近距视差、滚转俯仰安装误差、弹道偏差未包含在固定偏置内。
+
+客户端要求编码器yaw在150ms内更新、采集处理不超过150ms；左侧目标缺失/多个合格绿色目标时不发送目标。双目测距仍保留，yaw不使用尚未验证的双目距离。协议无序号/时间戳，不能提供在线去重或拍摄时刻同步；不应重放旧数据。
+
+C板默认保留手动yaw，右三档使能后侧拨轮先回中再拨正端选视觉，负端回手动；右摇杆横向立即接管。禁能/遥控失联回手动。视觉只控制yaw，不触发发射。上行没有模式/故障反馈，查看C板Ozone的 `dart_vision` 与 `dart_yaw`。
+
+不需要OpenCV/MVS的通信工具：
+
+```bash
+cmake -S . -B build-link -DBUILD_CAMERA_APPS=OFF
+cmake --build build-link -j4
+./build-link/vision_yaw_probe --port /dev/ttyACM0
+# 显式只发送一次绝对目标+0.1°，仍受C板500ms超时策略约束：
+./build-link/vision_yaw_probe --port /dev/ttyACM0 --yaw-deg 0.1
+```
+
+默认工具只监视编码器yaw；不要与相机程序同时占用设备。正式控制需持续刷新绝对目标。
+
+共享协议位于 `dart_vision_protocol.h`，须与电控同名文件逐字一致。跨工程测试在电控仓库运行 `python3 tests/dart_vision/run_link.py --vision-root /path/to/GUIDED-DART`，无需真实相机或电机。
