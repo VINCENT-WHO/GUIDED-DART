@@ -59,3 +59,10 @@ right_s_min: 90
 right_v_min: 35
 right_min_area_px: 100.
 right_min_circularity: 0.60
+
+# USB 简化协议：C 板上行编码器估算镖架 yaw，下行绝对镖架 yaw (float32, deg)。
+vision_serial_port: ""
+# 目标画面偏右时，电控 yaw 需增大/减小：+1/-1。
+vision_yaw_sign: 1.0
+# 目标位于发射方向时的左相机水平光轴偏角，deg。
+vision_aim_yaw_deg: 0.0

@@ -1,11 +1,13 @@
 // 实时测距入口：加载参数 → 左右取图 → 圆心检测 → 三维计算 → 显示、调参和保存。
 #include "stereo_core.hpp"
 #include "mvs_camera.hpp"
+#include "vision_link.hpp"
 #include <atomic>
 #include <algorithm>
 #include <cstdlib>
 #include <memory>
 #include <chrono>
+#include <cmath>
 #include <csignal>
 #include <future>
 #include <fstream>
@@ -143,7 +145,8 @@ int main(int argc,char** argv){
             "{help h||Help}{config|stereo_config.yaml|Configuration path}{list||List cameras only}"
             "{headless||No GUI}{frames|0|Stop after N frame pairs (0 unlimited)}"
             "{save-first||Save first raw pair and annotated previews}{csv||Optional CSV path}"
-            "{left-image||Replay left image without cameras}{right-image||Replay right image without cameras}");
+            "{left-image||Replay left image without cameras}{right-image||Replay right image without cameras}"
+            "{vision-port||USB CDC device, overrides vision_serial_port in config}");
         if(args.has("help")){args.printMessage();return 0;}
         if(!args.check()){args.printErrors();return 1;}
         // 离线回放必须同时提供左右图片；默认显示黑白掩码，headless 则完全不创建窗口。
@@ -167,7 +170,8 @@ int main(int argc,char** argv){
         auto resolve=[&](const std::string& path){return fs::path(path).is_absolute()?fs::path(path):config.parent_path()/path;};
         // 先设缺省变量，再逐项读取配置；真正左右对应关系以配置中的序列号和内参路径为准。
         std::string leftFile="calibration(5-50).yaml",rightFile="calibration2.yaml",extrinsics,leftSerial,rightSerial;
-        std::string saveDir="captures";
+        std::string saveDir="captures",visionPort;
+        double visionSign=1.0,visionAimYaw=0.0;
         int leftIndex=0,rightIndex=1,previewWidth=540;
         double exposure=0,minAngle=0.02,baseline=0;
         DetectorSettings detector;
@@ -178,6 +182,14 @@ int main(int argc,char** argv){
         read(f,"extrinsics",extrinsics);read(f,"parallel_baseline_mm",baseline);
         read(f,"exposure_us",exposure);read(f,"preview_width",previewWidth);read(f,"save_directory",saveDir);
         read(f,"min_ray_angle_deg",minAngle);
+        read(f,"vision_serial_port",visionPort);
+        read(f,"vision_yaw_sign",visionSign);read(f,"vision_aim_yaw_deg",visionAimYaw);
+        if(args.has("vision-port"))visionPort=args.get<std::string>("vision-port");
+        if(!std::isfinite(visionSign) || std::abs(visionSign)!=1.0 ||
+           !std::isfinite(visionAimYaw) || std::abs(visionAimYaw)>45)
+            throw std::runtime_error("Invalid vision yaw sign/aim offset");
+        if(replay && !visionPort.empty())throw std::runtime_error("Replay images cannot control yaw; clear vision_serial_port");
+        VisionLink visionLink(visionPort);
         read(f,"h_min",detector.hMin);read(f,"h_max",detector.hMax);
         read(f,"s_min",detector.sMin);read(f,"v_min",detector.vMin);
         read(f,"min_area_px",detector.minArea);read(f,"max_area_fraction",detector.maxAreaFraction);
@@ -272,6 +284,10 @@ int main(int argc,char** argv){
         int count=0;
         // 每轮产生一对观测：采集 → 参数更新 → 左右检测 → 三角化 → UI/存盘；不复用旧距离。
         while(!stopRequested && (limit==0 || count<limit)){
+            visionLink.poll();
+            // Snapshot encoder-estimated mechanical yaw before triggering; reject slow frames locally.
+            auto captureYaw=visionLink.yawDegrees();
+            auto captureStart=Clock::now();
             cv::Mat il,ir;double gap=0;
             // 离线直接取已读图片；实时先触发左右两机，再并行等待两帧，减少串行等待。
             if(replay){il=replayL;ir=replayR;}
@@ -311,6 +327,17 @@ int main(int argc,char** argv){
             result.reason=!geometry?"NO EXTRINSICS - detection only":
                 (!tl && !tr?"Target missing: LEFT and RIGHT":(!tl?"Target missing: LEFT":"Target missing: RIGHT"));
             if(tl && tr && geometry) result=triangulateTarget(tl->center,tr->center,kl,kr,*geometry,minAngle);
+            // Downlink contains only the absolute mechanical yaw target (float degrees).
+            // Feedback already uses the C-board mechanical zero and yaw direction.
+            auto processingMs=std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now()-captureStart).count();
+            if(captureYaw && processingMs<=150 && tl && infoL.accepted==1){
+                std::vector<cv::Point2d> ray;
+                cv::undistortPoints(std::vector<cv::Point2d>{tl->center},ray,kl.K,kl.D);
+                double bearing=std::atan2(ray[0].x,1.0)*180.0/CV_PI;
+                double current=*captureYaw;
+                double target=current+visionSign*(bearing-visionAimYaw);
+                if(std::isfinite(target))visionLink.sendYaw(float(target));
+            }else visionLink.poll();
             double seconds=std::chrono::duration<double>(Clock::now()-start).count();
             ++count;
             std::string mode=geometry?(geometry->approximate?"APPROX parallel geometry":"Calibrated geometry"):"NO EXTRINSICS";
@@ -381,6 +408,7 @@ int main(int argc,char** argv){
                     <<" | L: "<<infoL.status<<" | R: "<<infoR.status;
                 if(result.valid)std::cout<<" | distance_to_baseline(m)="<<result.baselineDistance/1000
                     <<" | reproj(px)="<<result.reprojection;
+                if(visionLink.enabled())std::cout<<" | USB "<<visionLink.summary();
                 std::cout<<std::endl;lastReport=Clock::now();
             }
             // q/Esc 退出；m 切换掩码；w 持久化当前 HSV 参数。
